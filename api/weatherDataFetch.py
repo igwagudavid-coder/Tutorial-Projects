@@ -6,7 +6,7 @@ import json
 
 
 class WeatherDataFetch():
-    def __init__(self,city_data:CityData):
+    def __init__(self,city_data:CityData) ->WeatherData:
         self.BASE_DIR = BASE_DIR
         self.url = None
         with open(f'{BASE_DIR}/config/config.json') as file:

@@ -1,13 +1,13 @@
 from utils.logger import setupLogger
 from api.cityDataFetch import CityDataFetch
 from api.weatherDataFetch import WeatherDataFetch
-from  Data.models.data_model import CityData
 from utils.formatters import city_formatter,weather_formatter
 import time
 from requests.exceptions import Timeout,HTTPError,ConnectionError
 
 def weatherMonitor( weather_data, weather_fetch, logger, interval = 120):
     last_weather=weather_data
+    retries = 0
     while True:
         try:
             weather_data = weather_fetch.fetchWeather()
@@ -15,7 +15,12 @@ def weatherMonitor( weather_data, weather_fetch, logger, interval = 120):
         except (ConnectionError, Timeout ,HTTPError) as e:
             logger.error(str(e))
             time.sleep(30)
-            continue
+            retries+=1
+            if retries< 10:
+                continue
+            else:
+                raise Exception("Retires limit reached!")
+
 
         if weather_data != last_weather:
             weather_formatter(weather_data)
@@ -40,19 +45,31 @@ def main():
         exit()
 
     logger.info("System Started successfully!")
+    choice = input("Do you want to run the weather monitor?(Y/N): ").strip().lower()
+    if choice == "y":
 
-    try:
-        weather_fetch = WeatherDataFetch(city_data)
-    except Exception as e:
-        print(f"Weather Fetching failed: {e}")
-        logger.error(str(e))
-        exit()
-    weather_data = weather_fetch.fetchWeather()
-    if not name:
-        print("-----------Default----------")
-    #city_formatter(city_data)
-    weather_formatter(weather_data)
-    weatherMonitor(weather_data,weather_fetch, logger)
+        try:
+            weather_fetch = WeatherDataFetch(city_data)
+        except Exception as e:
+            print(f"Weather Fetching failed: {e}")
+            logger.error(str(e))
+            exit()
+        weather_data = weather_fetch.fetchWeather()
+        if not name:
+            print("-----------Default----------")
+        weather_formatter(weather_data)
+
+        try:
+
+            weatherMonitor(weather_data,weather_fetch, logger)
+
+        except Exception as e:
+             logger.error(str(e))
+    else:
+        if not name:
+            print("-----------Default----------")
+        city_formatter(city_data)
+
 
 if __name__ == "__main__":
     main()
